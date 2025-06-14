@@ -175,7 +175,7 @@ export default defineContentScript({
           ([
             key,
             value,
-          ]) => `<li style="overflow-wrap: break-word; word-break: break-word; margin-bottom: 6px"><strong>${key}:</strong> ${value}</li>
+          ]) => `<li><strong>${key}:</strong> ${value}</li>
 `
         )
         .join("");
@@ -188,9 +188,11 @@ export default defineContentScript({
 
       floatingEl.innerHTML = `
       <div class="popup">
-        <button id="close-btn" class="close">&times;</button>
-        <h4 class="title">Selenium Locators</h4>
-        <ul class="list">${
+        <div class="header">
+          <span>Selenium Locators</span>
+          <button id="close-btn" class="close">&times;</button>
+        </div>
+        <ul class="locator-list">${
           attributesList || "<li>No useful locators found.</li>"
         }</ul>
       </div>
@@ -199,82 +201,76 @@ export default defineContentScript({
       // Inject style via CSS classes
       const popupStyle = document.createElement("style");
       popupStyle.textContent = `
-    .popup {
-      position: fixed;
-      top: ${Math.min(e.clientY + 10, window.innerHeight - 200)}px;
-      left: ${Math.min(e.clientX + 10, window.innerWidth - 320)}px;
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 16px 12px 12px 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      max-width: 300px;
-      font-family: Arial, sans-serif;
-      font-size: 14px;
-      color: #333;
-      z-index: 2147483647;
-    }
-    .close {
-      position: absolute;
-      top: 6px;
-      right: 10px;
-      background: transparent;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-      color: #888;
-    }
-    .close:hover {
-      color: #000;
-    }
-    .title {
-      margin: 0 0 8px;
-      font-weight: bold;
-      font-size: 15px;
-    }
-    .list {
-      list-style-type: disc;
-      padding-left: 18px;
-      margin: 0;
-    }
-  `;
+      .popup {
+        position: fixed;
+        top: ${Math.min(e.clientY + 10, window.innerHeight - 300)}px;
+        left: ${Math.min(e.clientX + 10, window.innerWidth - 340)}px;
+        background: #fefefe;
+        border-radius: 14px;
+        border: 1px solid #ddd;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+        width: 320px;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 14px;
+        color: #1f2937;
+        overflow: hidden;
+        z-index: 999999;
+        animation: popupFade 0.3s ease-in-out;
+      }
+
+      .header {
+        background-color:  #22c55e;
+        padding: 10px 14px;
+        font-weight: 600;
+        font-size: 15px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .close{
+        background: transparent;
+        border: none;
+        color: #f3f4f6;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.2s ease;
+      }
+
+      .close:hover {
+        color: #fff;
+      }
+
+      .locator-list {
+        padding: 12px 16px;
+        list-style: none;
+        max-height: 260px;
+        overflow-y: auto;
+      }
+
+      .locator-list li {
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px dashed #e5e7eb;
+        word-break: break-word;
+        overflow-wrap: break-word;
+      }
+
+      @keyframes popupFade {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }`;
+
       document.head.appendChild(popupStyle);
 
-      //     floatingEl.style.cssText = `
-      //   position: fixed;
-      //   top: ${e.clientY + 10}px;
-      //   left: ${e.clientX + 10}px;
-      //   background: #fff;
-      //   border: 1px solid #ccc;
-      //   padding: 10px;
-      //   font-size: 14px;
-      //   z-index: 999999;
-      //   max-width: 300px;
-      //   box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      // `;
-
-      //     floatingEl.innerHTML = `
-      //   <strong>Selenium locators :</strong><br>
-      //   <ul>${attributesList || "<li>No usefull locators found!!</li>"}
-      //     </ul>
-      // `;
-
-      // const closeBtn = document.createElement("button");
-      // closeBtn.innerText = "×";
-      // closeBtn.style.cssText = `
-      // position: absolute;
-      // top: 5px;
-      // right: 5px;
-      // border: none;
-      // background: transparent;
-      // font-size: 18px;
-      // cursor: pointer
-      // `;
-      // closeBtn.onclick = (e) => {
-      //   e.stopPropagation();
-      //   floatingEl?.remove();
-      // };
-      // floatingEl.appendChild(closeBtn);
       floatingEl.querySelector("#close-btn")?.addEventListener("click", (e) => {
         e.stopPropagation();
         floatingEl?.remove();
