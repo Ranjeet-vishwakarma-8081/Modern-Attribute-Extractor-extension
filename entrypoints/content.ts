@@ -159,10 +159,10 @@ export default defineContentScript({
       const cssSelector = getCSSSelector(el);
 
       const seleniumLocators = {
+        tagName: tag || null,
         id: el.id || null,
         className: el.className || null,
         name: el.getAttribute("name") || null,
-        tagName: tag || null,
         linkText: (tag === "a" && eleText) || null,
         partialLinkText: tag === "a" ? eleText.split(" ")[0] : null,
         cssSelector,
@@ -175,7 +175,7 @@ export default defineContentScript({
           ([
             key,
             value,
-          ]) => `<li style="overflow-wrap: break-word; word-break: break-word;"><strong>${key}:</strong> ${value}</li>
+          ]) => `<li style="overflow-wrap: break-word; word-break: break-word; margin-bottom: 6px"><strong>${key}:</strong> ${value}</li>
 `
         )
         .join("");
@@ -185,41 +185,100 @@ export default defineContentScript({
 
       floatingEl = document.createElement("div");
       floatingEl.id = "floating-popup";
-      floatingEl.style.cssText = `
-    position: fixed;
-    top: ${e.clientY + 10}px;
-    left: ${e.clientX + 10}px;
-    background: #fff;
-    border: 1px solid #ccc;
-    padding: 10px;
-    font-size: 14px;
-    z-index: 999999;
-    max-width: 300px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-  `;
 
       floatingEl.innerHTML = `
-    <strong>Selenium locators :</strong><br>
-    <ul>${attributesList || "<li>No usefull locators found!!</li>"}
-      </ul>
-  `;
-
-      const closeBtn = document.createElement("button");
-      closeBtn.innerText = "×";
-      closeBtn.style.cssText = `
-      position: absolute; 
-      top: 5px; 
-      right: 5px; 
-      border: none; 
-      background: transparent; 
-      font-size: 18px; 
-      cursor: pointer
+      <div class="popup">
+        <button id="close-btn" class="close">&times;</button>
+        <h4 class="title">Selenium Locators</h4>
+        <ul class="list">${
+          attributesList || "<li>No useful locators found.</li>"
+        }</ul>
+      </div>
       `;
-      closeBtn.onclick = (e) => {
+
+      // Inject style via CSS classes
+      const popupStyle = document.createElement("style");
+      popupStyle.textContent = `
+    .popup {
+      position: fixed;
+      top: ${Math.min(e.clientY + 10, window.innerHeight - 200)}px;
+      left: ${Math.min(e.clientX + 10, window.innerWidth - 320)}px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px 12px 12px 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      max-width: 300px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      color: #333;
+      z-index: 2147483647;
+    }
+    .close {
+      position: absolute;
+      top: 6px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #888;
+    }
+    .close:hover {
+      color: #000;
+    }
+    .title {
+      margin: 0 0 8px;
+      font-weight: bold;
+      font-size: 15px;
+    }
+    .list {
+      list-style-type: disc;
+      padding-left: 18px;
+      margin: 0;
+    }
+  `;
+      document.head.appendChild(popupStyle);
+
+      //     floatingEl.style.cssText = `
+      //   position: fixed;
+      //   top: ${e.clientY + 10}px;
+      //   left: ${e.clientX + 10}px;
+      //   background: #fff;
+      //   border: 1px solid #ccc;
+      //   padding: 10px;
+      //   font-size: 14px;
+      //   z-index: 999999;
+      //   max-width: 300px;
+      //   box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      // `;
+
+      //     floatingEl.innerHTML = `
+      //   <strong>Selenium locators :</strong><br>
+      //   <ul>${attributesList || "<li>No usefull locators found!!</li>"}
+      //     </ul>
+      // `;
+
+      // const closeBtn = document.createElement("button");
+      // closeBtn.innerText = "×";
+      // closeBtn.style.cssText = `
+      // position: absolute;
+      // top: 5px;
+      // right: 5px;
+      // border: none;
+      // background: transparent;
+      // font-size: 18px;
+      // cursor: pointer
+      // `;
+      // closeBtn.onclick = (e) => {
+      //   e.stopPropagation();
+      //   floatingEl?.remove();
+      // };
+      // floatingEl.appendChild(closeBtn);
+      floatingEl.querySelector("#close-btn")?.addEventListener("click", (e) => {
         e.stopPropagation();
         floatingEl?.remove();
-      };
-      floatingEl.appendChild(closeBtn);
+      });
       document.body.appendChild(floatingEl);
     }
   },
