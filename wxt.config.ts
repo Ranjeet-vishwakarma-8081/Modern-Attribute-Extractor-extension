@@ -8,7 +8,7 @@ export default defineConfig({
     description:
       "Select any element and view its attributes in a floating popup.",
     version: "1.0.0",
-    permissions: ["scripting", "tabs", "activeTab"],
+    permissions: ["scripting", "storage", "tabs", "activeTab"],
     host_permissions: ["<all_urls>"],
     action: {
       default_popup: "/entrypoints/popup/index.html",
