@@ -2,6 +2,7 @@ import { defineConfig } from "wxt";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
+  srcDir: "src",
   modules: ["@wxt-dev/module-react"],
   manifest: {
     name: "Attribute Extractor",
@@ -14,13 +15,13 @@ export default defineConfig({
       default_popup: "/entrypoints/popup/index.html",
     },
     background: {
-      service_worker: "/entrypoints/background.ts",
+      service_worker: "entrypoints/background/index.ts",
       type: "module",
     },
     content_scripts: [
       {
         matches: ["<all_urls>"],
-        js: ["/entrypoints/content.ts"],
+        js: ["/entrypoints/content/index.ts"],
       },
     ],
   },

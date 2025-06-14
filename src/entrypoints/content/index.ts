@@ -1,5 +1,5 @@
 export default defineContentScript({
-  matches: ["*://*.google.com/*"],
+  matches: ["<all_urls>"],
   main() {
     console.log("Hello content.");
 
@@ -172,10 +172,7 @@ export default defineContentScript({
       const attributesList = Object.entries(seleniumLocators)
         .filter(([_, value]) => !!value)
         .map(
-          ([
-            key,
-            value,
-          ]) => `<li><strong>${key}:</strong> ${value}</li>
+          ([key, value]) => `<li><strong>${key}:</strong> ${value}</li>
 `
         )
         .join("");
