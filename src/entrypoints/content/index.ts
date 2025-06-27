@@ -4,12 +4,10 @@ export default defineContentScript({
     console.log("Hello content.");
 
     let isActive = false;
-    let floatingEl: HTMLElement | null = null;
+    let stopRecorderEle: HTMLElement | null = null;
+    let seleniumLocators: Object;
 
-    const highlightStyle = `
-  outline: 2px solid red;
-  cursor: crosshair;
-`;
+    let allSeleniumLocators: Object[] = [];
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.action === "START") {
@@ -136,143 +134,107 @@ export default defineContentScript({
     function activateSelector() {
       isActive = true;
       document.addEventListener("click", onClick, true);
+      if (document.getElementById("stop-recorder-btn")) return;
+
+      stopRecorderEle = document.createElement("div");
+      stopRecorderEle.id = "stop-recorder-btn";
+      stopRecorderEle.innerHTML = `<div style="
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2147483647;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 20px;
+      background-color: #ef4444;
+      color: white;
+      font-weight: 600;
+      font-family: sans-serif;
+      border-radius: 8px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: background-color 0.3s ease;">
+      ⛔ Stop Recording
+    </div>
+  `;
+
+      // ⛔ Add click to deactivate
+      stopRecorderEle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deactivateSelector();
+        chrome.runtime.sendMessage({
+          action: "OPEN_LOCATOR_POPUP",
+          allSeleniumLocators,
+        });
+        stopRecorderEle?.remove();
+        console.log("Stopped recording");
+      });
+
+      document.body.appendChild(stopRecorderEle);
     }
 
     function deactivateSelector() {
       isActive = false;
       document.removeEventListener("click", onClick, true);
-      if (floatingEl) floatingEl.remove();
+      if (stopRecorderEle) stopRecorderEle.remove();
     }
 
     function onClick(e: MouseEvent) {
       if (!isActive) return;
-      const el = e.target as HTMLElement;
 
-      if (floatingEl && floatingEl.contains(el)) return;
+      console.log("onclick event - ", e);
+      const el = e.target as HTMLElement;
+      if (!el || !(el instanceof HTMLElement)) return;
+
+      console.log("target element -", el);
+      if (stopRecorderEle && stopRecorderEle.contains(el)) return;
 
       e.preventDefault();
       e.stopPropagation();
 
       const tag = el.tagName.toLowerCase();
       const eleText = el.textContent?.trim() || "";
-      const XPath = getSmartXPath(el);
-      const cssSelector = getCSSSelector(el);
 
-      const seleniumLocators = {
+      seleniumLocators = {
         tagName: tag || null,
         id: el.id || null,
         className: el.className || null,
         name: el.getAttribute("name") || null,
         linkText: (tag === "a" && eleText) || null,
         partialLinkText: tag === "a" ? eleText.split(" ")[0] : null,
-        cssSelector,
-        XPath,
+        cssSelector: getCSSSelector(el),
+        xPath: getSmartXPath(el),
+
+        eventName: e.type || null,
+        value: null,
       };
 
-      const attributesList = Object.entries(seleniumLocators)
-        .filter(([_, value]) => !!value)
-        .map(
-          ([key, value]) => `<li><strong>${key}:</strong> ${value}</li>
-`
-        )
-        .join("");
+      if (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement
+      ) {
+        const inputEl = el;
 
-      el.style.cssText += highlightStyle;
-      if (floatingEl) floatingEl.remove();
+        const inputHandler = () => {
+          seleniumLocators = {
+            ...seleniumLocators,
+            value: inputEl.value,
+          };
+          console.log("Updated Input value -", inputEl.value);
+          allSeleniumLocators.push({
+            ...seleniumLocators,
+          });
 
-      floatingEl = document.createElement("div");
-      floatingEl.id = "floating-popup";
+          inputEl.removeEventListener("change", inputHandler);
+        };
 
-      floatingEl.innerHTML = `
-      <div class="popup">
-        <div class="header">
-          <span>Selenium Locators</span>
-          <button id="close-btn" class="close">&times;</button>
-        </div>
-        <ul class="locator-list">${
-          attributesList || "<li>No useful locators found.</li>"
-        }</ul>
-      </div>
-      `;
-
-      // Inject style via CSS classes
-      const popupStyle = document.createElement("style");
-      popupStyle.textContent = `
-      .popup {
-        position: fixed;
-        top: ${Math.min(e.clientY + 10, window.innerHeight - 300)}px;
-        left: ${Math.min(e.clientX + 10, window.innerWidth - 340)}px;
-        background: #fefefe;
-        border-radius: 14px;
-        border: 1px solid #ddd;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
-        width: 320px;
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 14px;
-        color: #1f2937;
-        overflow: hidden;
-        z-index: 999999;
-        animation: popupFade 0.3s ease-in-out;
+        inputEl.addEventListener("change", inputHandler);
+      } else {
+        allSeleniumLocators.push({ ...seleniumLocators });
       }
-
-      .header {
-        background-color:  #22c55e;
-        padding: 10px 14px;
-        font-weight: 600;
-        font-size: 15px;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-
-      .close{
-        background: transparent;
-        border: none;
-        color: #f3f4f6;
-        font-size: 20px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: color 0.2s ease;
-      }
-
-      .close:hover {
-        color: #fff;
-      }
-
-      .locator-list {
-        padding: 12px 16px;
-        list-style: none;
-        max-height: 260px;
-        overflow-y: auto;
-      }
-
-      .locator-list li {
-        margin-bottom: 8px;
-        padding-bottom: 6px;
-        border-bottom: 1px dashed #e5e7eb;
-        word-break: break-word;
-        overflow-wrap: break-word;
-      }
-
-      @keyframes popupFade {
-        from {
-          opacity: 0;
-          transform: scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
-      }`;
-
-      document.head.appendChild(popupStyle);
-
-      floatingEl.querySelector("#close-btn")?.addEventListener("click", (e) => {
-        e.stopPropagation();
-        floatingEl?.remove();
-      });
-      document.body.appendChild(floatingEl);
+      console.log("All seleniumLocators -", allSeleniumLocators);
     }
   },
 });

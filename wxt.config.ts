@@ -24,5 +24,11 @@ export default defineConfig({
         js: ["/entrypoints/content/index.ts"],
       },
     ],
+    web_accessible_resources: [
+      {
+        resources: ["index.html"],
+        matches: ["<all_urls>"],
+      },
+    ],
   },
 });

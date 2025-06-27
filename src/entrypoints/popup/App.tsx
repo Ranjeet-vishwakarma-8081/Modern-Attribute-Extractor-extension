@@ -32,7 +32,8 @@ const App = () => {
         Enable selection mode to extract attributes from any element on the
         page.
       </p>
-      {/* <button
+      {/* Conventional Button */}
+      <button
         type="button"
         onClick={handleToggleSelector}
         className={`w-full py-2 px-4 rounded-lg text-white font-semibold transition-colors duration-200 ${
@@ -41,9 +42,10 @@ const App = () => {
             : "bg-green-500 hover:bg-green-600"
         }`}
       >
-        {isActive ? "STOP" : "START"} SELECTOR
-      </button> */}
-      <div className="flex items-center justify-center gap-2">
+        {isActive ? "STOP" : "START"} RECORDING
+      </button>
+      {/* Modern Button */}
+      {/* <div className="flex items-center justify-center gap-2">
         <span className="text-sm font-medium text-gray-700 ">
           Selector Mode
         </span>
@@ -62,7 +64,7 @@ const App = () => {
           <div className="h-6 transition-all duration-300 bg-gray-300 rounded-full w-11 peer-focus:outline-none peer peer-checked:bg-green-500" />
           <div className="absolute transition-transform duration-300 transform bg-white rounded-full left-1 top-1 size-4 peer-checked:translate-x-5"></div>
         </label>
-      </div>
+      </div> */}
     </div>
   );
 };
